@@ -126,9 +126,7 @@ public abstract class Pool<T> implements Closeable {
   }
   
   /**
-   * 返回连接池中可以借用的实例数
-   *
-   * @return 返回连接池中可以借用的实例数，-1 代表连接池不是激活状态
+   * 返回连接池中可以借用的实例数，-1 代表连接池不是激活状态
    */
   public int getNumActive() {
     if (poolInactive()) {
@@ -139,10 +137,7 @@ public abstract class Pool<T> implements Closeable {
   }
   
   /**
-   * Returns the number of instances currently idle in this pool.
-   *
-   * @return The number of instances currently idle in this pool, -1 if the
-   * pool is inactive.
+   * 返回当前连接池中闲置的资源数量，-1代表当前连接池不是激活状态
    */
   public int getNumIdle() {
     if (poolInactive()) {
