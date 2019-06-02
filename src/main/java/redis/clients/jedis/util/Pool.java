@@ -12,14 +12,17 @@ import redis.clients.jedis.exceptions.JedisException;
 import redis.clients.jedis.exceptions.JedisExhaustedPoolException;
 
 public abstract class Pool<T> implements Closeable {
+
   protected GenericObjectPool<T> internalPool;
 
-  /**
-   * Using this constructor means you have to set and initialize the internalPool yourself.
-   */
-  public Pool() {
+  protected Pool() {
   }
 
+  /**
+   * 通过此方法来构建连接池
+   * @param poolConfig 连接池的一些公共配置属性
+   * @param factory 池化对象工厂，用来创建连接池中池化对象
+   */
   public Pool(final GenericObjectPoolConfig poolConfig, PooledObjectFactory<T> factory) {
     initPool(poolConfig, factory);
   }
@@ -29,10 +32,18 @@ public abstract class Pool<T> implements Closeable {
     destroy();
   }
 
+  /**
+   * 连接池是否已关闭
+   */
   public boolean isClosed() {
     return this.internalPool.isClosed();
   }
 
+  /**
+   * 创建连接池对象，注意：如果之前已经初始化过则会先关闭再重新创建
+    * @param poolConfig
+   * @param factory
+   */
   public void initPool(final GenericObjectPoolConfig poolConfig, PooledObjectFactory<T> factory) {
 
     if (this.internalPool != null) {
@@ -45,11 +56,15 @@ public abstract class Pool<T> implements Closeable {
     this.internalPool = new GenericObjectPool<T>(factory, poolConfig);
   }
 
+
+  /**
+   * 获取连接池中的资源
+   */
   public T getResource() {
     try {
       return internalPool.borrowObject();
     } catch (NoSuchElementException nse) {
-      if (null == nse.getCause()) { // The exception was caused by an exhausted pool
+      if (null == nse.getCause()) { // 连接池耗尽时会为NPE，获取不到元素
         throw new JedisExhaustedPoolException(
             "Could not get a resource since the pool is exhausted", nse);
       }
@@ -60,6 +75,9 @@ public abstract class Pool<T> implements Closeable {
     }
   }
 
+  /**
+   * 归还资源到连接池中
+   */
   protected void returnResourceObject(final T resource) {
     if (resource == null) {
       return;
@@ -83,6 +101,10 @@ public abstract class Pool<T> implements Closeable {
     }
   }
 
+
+  /**
+   * 关闭连接池
+   */
   public void destroy() {
     closeInternalPool();
   }
@@ -104,10 +126,9 @@ public abstract class Pool<T> implements Closeable {
   }
   
   /**
-   * Returns the number of instances currently borrowed from this pool.
+   * 返回连接池中可以借用的实例数
    *
-   * @return The number of instances currently borrowed from this pool, -1 if
-   * the pool is inactive.
+   * @return 返回连接池中可以借用的实例数，-1 代表连接池不是激活状态
    */
   public int getNumActive() {
     if (poolInactive()) {
